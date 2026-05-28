@@ -1,13 +1,23 @@
+cat > /Users/bssmmch/RPG/my-tower-rpg/index.html << 'EOF'
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>my-tower-rpg</title>
+    <title>갑자기 도시 한복판에 나타난 정체불명의 탑을 제가 정복하라고요? RPG</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body, #root {
+        margin: 0; padding: 0;
+        width: 100%; min-height: 100vh;
+        overflow-x: hidden;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+EOF
