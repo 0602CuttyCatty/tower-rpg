@@ -751,7 +751,7 @@ export default function App() {
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#312e81}
     button{font-family:'Cinzel',serif;touch-action:manipulation}
-    body{overscroll-behavior:none;overflow-x:hidden;max-width:100vw}
+    body{margin:0;padding:0}
   `;
 
   // ─── TITLE ───
@@ -1105,9 +1105,7 @@ export default function App() {
     return (
       <div style={{minHeight:"100vh",background:"#030712",fontFamily:"'Cinzel',serif",
         backgroundImage:"radial-gradient(ellipse at 50% 20%,#1a0a0a 0%,#030712 70%)",
-        display:"flex",flexDirection:"column",padding:"8px 10px",
-        maxWidth:"100%",margin:"0 auto",WebkitOverflowScrolling:"touch",
-        overflowX:"hidden",boxSizing:"border-box",position:"relative"}}>
+        display:"flex",flexDirection:"column",padding:"8px 10px"}}>
         <style>{GS}</style>
         {/* TOP BAR */}
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#6b7280",marginBottom:5}}>
