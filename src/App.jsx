@@ -751,7 +751,7 @@ export default function App() {
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#312e81}
     button{font-family:'Cinzel',serif;touch-action:manipulation}
-    body{overscroll-behavior:none}
+    body{overscroll-behavior:none;overflow-x:hidden;max-width:100vw}
   `;
 
   // ─── TITLE ───
@@ -1106,7 +1106,8 @@ export default function App() {
       <div style={{minHeight:"100vh",background:"#030712",fontFamily:"'Cinzel',serif",
         backgroundImage:"radial-gradient(ellipse at 50% 20%,#1a0a0a 0%,#030712 70%)",
         display:"flex",flexDirection:"column",padding:"8px 10px",
-        maxWidth:520,margin:"0 auto",WebkitOverflowScrolling:"touch"}}>
+        maxWidth:520,margin:"0 auto",WebkitOverflowScrolling:"touch",
+        overflowX:"hidden",width:"100vw",minWidth:"100vw",boxSizing:"border-box"}}>
         <style>{GS}</style>
         {/* TOP BAR */}
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#6b7280",marginBottom:5}}>
@@ -1159,7 +1160,8 @@ export default function App() {
             {battle.enemies.length>1&&<span style={{color:"#fbbf24",marginLeft:5}}>▶ 적 탭으로 대상 변경</span>}
           </div>
           <div style={{display:"flex",gap:"clamp(4px,1.5vw,7px)",overflowX:"auto",paddingBottom:6,paddingTop:2,
-            WebkitOverflowScrolling:"touch",scrollSnapType:"x mandatory"}}>
+            WebkitOverflowScrolling:"touch",scrollSnapType:"x mandatory",
+            width:"100%",minWidth:0}}>
             {battle.hand.map((id,i)=>{
               const c=getCard(id); const canPlay=c&&c.cost<=battle.mana&&!battle.ended;
               return (
