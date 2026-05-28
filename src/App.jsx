@@ -1106,8 +1106,8 @@ export default function App() {
       <div style={{minHeight:"100vh",background:"#030712",fontFamily:"'Cinzel',serif",
         backgroundImage:"radial-gradient(ellipse at 50% 20%,#1a0a0a 0%,#030712 70%)",
         display:"flex",flexDirection:"column",padding:"8px 10px",
-        maxWidth:520,margin:"0 auto",WebkitOverflowScrolling:"touch",
-        overflowX:"hidden",width:"100vw",minWidth:"100vw",boxSizing:"border-box"}}>
+        maxWidth:"100%",margin:"0 auto",WebkitOverflowScrolling:"touch",
+        overflowX:"hidden",boxSizing:"border-box",position:"relative"}}>
         <style>{GS}</style>
         {/* TOP BAR */}
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#6b7280",marginBottom:5}}>
