@@ -479,6 +479,8 @@ export default function App() {
   const [showDeck,setShowDeck]=useState(false);
   const [permanentData,setPermanentData]=useState(()=>loadPermanent());
   const [upgradeJob,setUpgradeJob]=useState(null);
+  const [startFloor,setStartFloor]=useState(1);
+  const [pendingJobId,setPendingJobId]=useState(null); // 층 선택 대기중인 직업
   const floatId=useRef(0);
 
   const addFloat=useCallback((text,eidx=-1,color="#fbbf24",big=false)=>{
@@ -494,8 +496,6 @@ export default function App() {
   function xpForLevel(lv){return lv*40;}
   function gainXP(p,amount){
     let np={...p,xp:p.xp+amount};
-    // 업그레이드 포인트: XP 100마다 1포인트
-    const newPts = Math.floor(amount/100);
     while(np.xp>=xpForLevel(np.level)){
       np.xp-=xpForLevel(np.level);
       np.level+=1;
@@ -507,39 +507,50 @@ export default function App() {
       addLog(`🆙 레벨UP! Lv.${np.level} HP:${np.maxHp} 마나:${np.maxMana} 공격+${bon.atkBonus} 방어+${bon.blockBonus}`);
     }
     const prev=getPermanentJob(np.jobId);
-    const earnedPts = Math.max(newPts, Math.floor(amount/80)); // 전투 보상마다 포인트
     setPermanentJob(np.jobId,{
       level:np.level, xp:np.xp,
       totalRuns:prev.totalRuns||0, bestFloor:prev.bestFloor||0,
-      upgradePoints:(prev.upgradePoints||0)+earnedPts,
+      upgradePoints:prev.upgradePoints||0,
       upgradedCards:prev.upgradedCards||{},
     });
     setPermanentData(loadPermanent());
-    if(earnedPts>0) addLog(`✨ 업그레이드 포인트 +${earnedPts}P`);
     return np;
   }
 
   useEffect(()=>{ if(screen==="map") setMapNodes(generateFloorNodes(floor)); },[screen,floor]);
 
-  function startGame(jobId){
+  function startGame(jobId, fromFloor){
     const j=JOBS[jobId];
     const perm=getPermanentJob(jobId);
     const lv=perm.level;
     const stats=getJobStats(jobId,lv);
     const bon=getJobBonuses(jobId,lv);
-    // 영구 업그레이드 반영: 스타터 덱의 카드들을 업그레이드 상태로 변환
     const uc=perm.upgradedCards||{};
     const deck=j.starterDeck.map(id=>getPermCardId(uc,id));
-    setPlayer({jobId,level:lv,xp:perm.xp,hp:stats.maxHp,maxHp:stats.maxHp,gold:80+bon.startGold,deck,maxMana:stats.maxMana,handSize:stats.handSize});
-    setFloor(1); setLog([`⚔️ Lv.${lv} ${j.name} 시작! 업그레이드포인트:${perm.upgradePoints||0}P`]); setShowDeck(false);
-    setScreen("map"); setSubScreen(null);
+    const sf = fromFloor||1;
+    setPlayer({jobId,level:lv,xp:perm.xp,hp:stats.maxHp,maxHp:stats.maxHp,gold:80+bon.startGold,deck,maxMana:stats.maxMana,handSize:stats.handSize,startFloor:sf});
+    setFloor(sf); setLog([`⚔️ Lv.${lv} ${j.name} ${sf}층부터 시작!`]); setShowDeck(false);
+    setScreen("map"); setSubScreen(null); setPendingJobId(null);
+  }
+
+  // 포인트 계산: (현재층 - 시작층 + 1) / 5
+  function calcUpgradePoints(reachedFloor){
+    const sf = player?.startFloor||1;
+    return Math.floor((reachedFloor - sf + 1) / 5);
   }
   function recordRun(jobId,fl){
     const prev=getPermanentJob(jobId);
     setPermanentJob(jobId,{...prev,totalRuns:(prev.totalRuns||0)+1,bestFloor:Math.max(prev.bestFloor||0,fl)});
     setPermanentData(loadPermanent());
-  }  function advanceFloor(){
-    if(floor>=200){ recordRun(player.jobId,200); setScreen("win"); return; }
+  }
+  function advanceFloor(){
+    if(floor>=200){
+      const prev=getPermanentJob(player.jobId);
+      const earnedPts=Math.floor((200-(player.startFloor||1)+1)/5);
+      setPermanentJob(player.jobId,{...prev,totalRuns:(prev.totalRuns||0)+1,bestFloor:200,upgradePoints:(prev.upgradePoints||0)+earnedPts});
+      setPermanentData(loadPermanent());
+      setScreen("win"); return;
+    }
     setFloor(f=>f+1); setScreen("map");
   }
   function enterNode(node){
@@ -704,14 +715,16 @@ export default function App() {
 
     if(playerDied){
       const prev=getPermanentJob(np.jobId);
+      const earnedPts = Math.floor((floor - (np.startFloor||1) + 1) / 5);
       setPermanentJob(np.jobId,{
         level:np.level, xp:np.xp,
         totalRuns:(prev.totalRuns||0)+1,
         bestFloor:Math.max(prev.bestFloor||0,floor),
-        upgradePoints:prev.upgradePoints||0,
+        upgradePoints:(prev.upgradePoints||0)+earnedPts,
         upgradedCards:prev.upgradedCards||{},
       });
       setPermanentData(loadPermanent());
+      if(earnedPts>0) addLog(`✨ 업그레이드 포인트 +${earnedPts}P 획득!`);
       setPlayer({...np,hp:0}); setBattle({...nb,ended:true,enemies});
       setTimeout(()=>setScreen("gameover"),900); return;
     }
@@ -804,7 +817,7 @@ export default function App() {
                 const perm=permanentData[j.id]||{level:1,xp:0,totalRuns:0,bestFloor:0};
                 const lv=perm.level; const bon=getJobBonuses(j.id,lv); const stats=getJobStats(j.id,lv);
                 return (
-                  <button key={j.id} onClick={()=>{setSubScreen(null);startGame(j.id);}}
+                  <button key={j.id} onClick={()=>setPendingJobId(j.id)}
                     style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"rgba(255,255,255,.04)",border:`1.5px solid ${j.color}44`,borderRadius:10,cursor:"pointer",textAlign:"left"}}
                     onMouseEnter={e=>e.currentTarget.style.borderColor=j.color}
                     onMouseLeave={e=>e.currentTarget.style.borderColor=j.color+"44"}>
@@ -829,6 +842,40 @@ export default function App() {
                 );
               })}
             </div>
+
+            {/* 층 선택 팝업 */}
+            {pendingJobId&&(()=>{
+              const perm=permanentData[pendingJobId]||{bestFloor:0};
+              const maxStart=Math.max(1, perm.bestFloor||1);
+              const j=JOBS[pendingJobId];
+              return (
+                <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+                  <div style={{background:"#0d0b1e",border:`2px solid ${j.color}`,borderRadius:16,padding:24,maxWidth:400,width:"100%"}}>
+                    <h3 style={{color:j.color,margin:"0 0 6px",fontSize:16,textAlign:"center"}}>{j.emoji} {j.name} — 시작 층 선택</h3>
+                    <p style={{color:"#6b7280",fontFamily:"sans-serif",fontSize:11,textAlign:"center",margin:"0 0 16px"}}>
+                      최고 기록: {perm.bestFloor||0}층 · 최대 {maxStart}층부터 시작 가능<br/>
+                      포인트 보상: (클리어층 - 시작층 + 1) ÷ 5
+                    </p>
+                    <div style={{display:"flex",alignItems:"center",gap:12,justifyContent:"center",marginBottom:16}}>
+                      <button onClick={()=>setStartFloor(f=>Math.max(1,f-10))} style={{padding:"8px 14px",borderRadius:7,background:"#1e1b4b",border:"1px solid #4338ca",color:"#a5b4fc",cursor:"pointer",fontSize:13}}>-10</button>
+                      <button onClick={()=>setStartFloor(f=>Math.max(1,f-1))} style={{padding:"8px 14px",borderRadius:7,background:"#1e1b4b",border:"1px solid #4338ca",color:"#a5b4fc",cursor:"pointer",fontSize:13}}>-1</button>
+                      <div style={{fontSize:28,fontWeight:900,color:"#fbbf24",minWidth:70,textAlign:"center"}}>{startFloor}층</div>
+                      <button onClick={()=>setStartFloor(f=>Math.min(maxStart,f+1))} style={{padding:"8px 14px",borderRadius:7,background:"#1e1b4b",border:"1px solid #4338ca",color:"#a5b4fc",cursor:"pointer",fontSize:13}}>+1</button>
+                      <button onClick={()=>setStartFloor(f=>Math.min(maxStart,f+10))} style={{padding:"8px 14px",borderRadius:7,background:"#1e1b4b",border:"1px solid #4338ca",color:"#a5b4fc",cursor:"pointer",fontSize:13}}>+10</button>
+                    </div>
+                    <div style={{fontSize:10,color:"#4b5563",fontFamily:"sans-serif",textAlign:"center",marginBottom:14}}>
+                      예상 포인트: 200층 클리어 시 +{Math.floor((200-startFloor+1)/5)}P
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>setPendingJobId(null)} style={{flex:1,padding:"11px",background:"transparent",border:"1px solid #4b5563",color:"#6b7280",borderRadius:8,cursor:"pointer",fontSize:12}}>취소</button>
+                      <button onClick={()=>startGame(pendingJobId,startFloor)} style={{flex:2,padding:"11px",background:`linear-gradient(135deg,${j.color}88,#1e1b4b)`,border:`2px solid ${j.color}`,color:"#fff",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:700}}>
+                        {startFloor}층부터 시작! ⚔️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             <button onClick={()=>setSubScreen(null)} style={{marginTop:12,width:"100%",padding:"8px",background:"transparent",border:"1px solid #2d2a5e",color:"#6b7280",borderRadius:8,cursor:"pointer",fontSize:12}}>닫기</button>
           </div>
         </div>
