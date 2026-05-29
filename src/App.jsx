@@ -369,7 +369,7 @@ function CardComp({ cardId, playable, onClick, tiny, selected, dimmed }) {
     <div onClick={playable?onClick:undefined}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{
-        width:tiny?64:100, minHeight:tiny?82:140,
+        width:tiny?64:130, minHeight:tiny?82:180,
         background:selected?"rgba(251,191,36,.15)":elemData?`rgba(10,8,25,.95)`:"rgba(10,8,25,.95)",
         border:`2px solid ${borderColor}`,
         borderRadius:9, padding:tiny?"5px 4px":"9px 7px",
@@ -389,11 +389,11 @@ function CardComp({ cardId, playable, onClick, tiny, selected, dimmed }) {
         fontSize:tiny?8:11,fontWeight:700,color:"#a5b4fc"}}>{c.cost}</div>
       {/* upgraded badge */}
       {c.upgraded&&<div style={{position:"absolute",top:tiny?3:5,left:tiny?3:5,fontSize:7,color:"#fbbf24",fontWeight:700}}>⬆</div>}
-      <div style={{fontSize:tiny?18:26,lineHeight:1,marginTop:tiny?2:4}}>{c.emoji}</div>
-      <div style={{fontSize:tiny?8:10,fontWeight:700,color:"#f1f5f9",textAlign:"center",lineHeight:1.15}}>{c.name}</div>
-      {!tiny&&<div style={{fontSize:8,color:"#94a3b8",textAlign:"center",lineHeight:1.3}}>{c.desc}</div>}
+      <div style={{fontSize:tiny?18:32,lineHeight:1,marginTop:tiny?2:6}}>{c.emoji}</div>
+      <div style={{fontSize:tiny?8:13,fontWeight:700,color:"#f1f5f9",textAlign:"center",lineHeight:1.15}}>{c.name}</div>
+      {!tiny&&<div style={{fontSize:10,color:"#94a3b8",textAlign:"center",lineHeight:1.3}}>{c.desc}</div>}
       {!tiny&&c.elem&&<ElemBadge elem={c.elem}/>}
-      <div style={{fontSize:tiny?7:8.5,marginTop:"auto",color:TYPE_COLOR[c.type],fontWeight:600,background:TYPE_COLOR[c.type]+"20",borderRadius:3,padding:"1px 4px"}}>
+      <div style={{fontSize:tiny?7:10,marginTop:"auto",color:TYPE_COLOR[c.type],fontWeight:600,background:TYPE_COLOR[c.type]+"20",borderRadius:3,padding:"1px 4px"}}>
         {c.type==="attack"?"공격":c.type==="defense"?"방어":"스킬"}
       </div>
       <div style={{position:"absolute",bottom:tiny?3:5,left:tiny?3:5,fontSize:6.5,color:RARITY_COLOR[c.rarity],fontWeight:700}}>
@@ -704,7 +704,13 @@ export default function App() {
 
     if(playerDied){
       const prev=getPermanentJob(np.jobId);
-      setPermanentJob(np.jobId,{level:np.level,xp:np.xp,totalRuns:(prev.totalRuns||0)+1,bestFloor:Math.max(prev.bestFloor||0,floor)});
+      setPermanentJob(np.jobId,{
+        level:np.level, xp:np.xp,
+        totalRuns:(prev.totalRuns||0)+1,
+        bestFloor:Math.max(prev.bestFloor||0,floor),
+        upgradePoints:prev.upgradePoints||0,
+        upgradedCards:prev.upgradedCards||{},
+      });
       setPermanentData(loadPermanent());
       setPlayer({...np,hp:0}); setBattle({...nb,ended:true,enemies});
       setTimeout(()=>setScreen("gameover"),900); return;
